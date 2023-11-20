@@ -17,8 +17,8 @@ class Game {
      * 0    = Unfilled
      * 1    = Filled
      */
-    int *board;
-    int *solution;
+    int **board;
+    int **solution;
 
     void load_game(std::string folder) {
         // Loads constraints
@@ -31,11 +31,16 @@ class Game {
             input_stream >> width;
             input_stream >> height;
 
-            board = new int[width * height];
-            for (int i = 0; i < width * height; i++) {
-                board[i] = -1;
+            board = new int *[height];
+            solution = new int *[height];
+            for (int i = 0; i < height; i++) {
+                board[i] = new int[width];
+                solution[i] = new int[width];
+                for (int j = 0; j < width; j++) {
+                    board[i][j] = -1;
+                }
             }
-            solution = new int[width * height];
+
             len_constraints = new unsigned int[width + height];
             constraints = new unsigned int *[width + height];
 
@@ -60,11 +65,18 @@ class Game {
         // Load solution
         std::ifstream solution_file(folder + "/solution");
         if (solution_file.is_open()) {
-            int index = 0;
-            while(!solution_file.eof()){   
+            int i = 0;
+            int j = 0;
+            while (!solution_file.eof()) {
                 char c = solution_file.get();
-                if(c == '\n') continue;
-                solution[index++] = c - '0'; 
+                if (c != '0' && c != '1')
+                    continue;
+                solution[i][j] = c - '0';
+                j += 1;
+                if (j >= width) {
+                    i += 1;
+                    j = 0;
+                }
             }
             solution_file.close();
         }
@@ -74,20 +86,20 @@ class Game {
         for (int i = 0; i < width + height; i++) {
             delete[] constraints[i];
         }
+        for (int i = 0; i < height; i++) {
+            delete[] board[i];
+            delete[] solution[i];
+        }
         delete[] len_constraints;
         delete[] constraints;
         delete[] board;
         delete[] solution;
     };
 
-    int &get_board(int row, int col){
-        return board[row * width + col];
-    }
-
     void print_board() {
         for (int i = 0; i < height; i++) {
             for (int j = 0; j < width; j++) {
-                std::cout << board[i * width + j] << " ";
+                std::cout << board[i][j] << " ";
             }
             std::cout << "\n";
         }
@@ -96,7 +108,7 @@ class Game {
     void print_solution() {
         for (int i = 0; i < height; i++) {
             for (int j = 0; j < width; j++) {
-                std::cout << solution[i * width + j] << " ";
+                std::cout << solution[i][j] << " ";
             }
             std::cout << "\n";
         }
