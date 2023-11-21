@@ -4,6 +4,13 @@
 #include <sstream>
 #include <string>
 
+
+// Board values
+#define NOT_SET 9
+#define UNFILLED 0
+#define FILLED 1
+#define UNKNOWN 2
+
 class Game {
   public:
     unsigned int width;
@@ -11,12 +18,6 @@ class Game {
     unsigned int *len_constraints;
     unsigned int **constraints;
 
-    /**
-     * Board values;
-     * -1   = Not set
-     * 0    = Unfilled
-     * 1    = Filled
-     */
     int **board;
     int **solution;
 
@@ -37,7 +38,7 @@ class Game {
                 board[i] = new int[width];
                 solution[i] = new int[width];
                 for (int j = 0; j < width; j++) {
-                    board[i][j] = -1;
+                    board[i][j] = NOT_SET;
                 }
             }
 
@@ -81,6 +82,17 @@ class Game {
             solution_file.close();
         }
     };
+    // Compares board to solution
+    bool check_solution(){
+        for(int i = 0; i < height; i++){
+            for(int j = 0; j < width; j++){
+                if(board[i][j] != solution[i][j]){
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
 
     void free_dynamic_memory() {
         for (int i = 0; i < width + height; i++) {
