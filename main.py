@@ -70,7 +70,6 @@ def intersect_row_possibilities(HEIGHT, WIDTH, row_answers, board):
 
 
 def intersect_col_possibilities(HEIGHT, WIDTH, col_answers, board):
-
     for c in range(WIDTH):
         line = np.full(shape=(HEIGHT), fill_value=UNKNOWN, dtype=np.int32)
         for i in range(HEIGHT):
@@ -130,7 +129,7 @@ def main():
     ROW_CONSTRAINTS = []
     COL_CONSTRAINTS = []
 
-    filename = 'tests/11'
+    filename = 'paper-test/mushroom'
 
     constraint_file = open(f'{filename}/constraints', 'r')
     lines = constraint_file.readlines()
