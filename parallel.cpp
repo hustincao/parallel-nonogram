@@ -4,11 +4,13 @@
 #include <string>
 #include <vector>
 #include <chrono>
+#include <omp.h>
+
 
 using namespace std;
 typedef std::chrono::high_resolution_clock Clock;
 
-#define NOT_SET 5
+#define THREAD_NUM 4
 #define UNKNOWN 4
 #define UNFILLED 0
 #define FILLED 1
@@ -152,8 +154,17 @@ bool is_correct(vector<vector<int>> board, vector<vector<int>> solution) {
 }
 
 int main() {
-    string parent_folder = "tests/medium";
-    string test_folder = "68106";
+    // omp_set_thread_num(THREAD_NUM);
+    omp_set_num_threads(THREAD_NUM);
+    #pragma omp parallel
+    {
+        if(omp_get_thread_num() == 0){
+            cout << "Running with " << omp_get_num_threads() << " threads\n";
+        }
+    }
+    
+    string parent_folder = "tests/tiny";
+    string test_folder = "65956";
 #pragma region
     int WIDTH;
     int HEIGHT;
@@ -237,11 +248,14 @@ int main() {
 
     auto start_generation = Clock::now();
     
+    #pragma omp parallel for
     for (int i = 0; i < HEIGHT; i++) {
         all_possible_row_answers[i] = generate_all_possible_answers(row_constraints[i], WIDTH);
         // cout << "row " << i << "\n";
         // print_all_possible_answers(all_possible_row_answers[i]);
     }
+
+    #pragma omp parallel for
     for (int i = 0; i < WIDTH; i++) {
         all_possible_col_answers[i] = generate_all_possible_answers(col_constraints[i], HEIGHT);
         // cout << "col " << i << "\n";
@@ -254,34 +268,34 @@ int main() {
     auto start_solver = Clock::now();
     while (true) {
         is_updated = false;
+        #pragma omp parallel for
         for (int i = 0; i < HEIGHT; i++) {
             intersect_all_possible_answers(all_possible_row_answers[i], WIDTH, board, i, false);
         }
+        #pragma omp parallel for
         for (int i = 0; i < WIDTH; i++) {
             intersect_all_possible_answers(all_possible_col_answers[i], HEIGHT, board, i, true);
         }
-
+        #pragma omp parallel for
         for (int i = 0; i < HEIGHT; i++) {
             bool update = remove_possible_answers(all_possible_row_answers[i], WIDTH, board, i, false);
 
             is_updated = is_updated || update;
         }
+        #pragma omp parallel for
         for (int i = 0; i < WIDTH; i++) {
             bool update = remove_possible_answers(all_possible_col_answers[i], HEIGHT, board, i, true);
       
             is_updated = is_updated || update;
         }
-        // print_board(board);
 
         if (is_finished(board)) {
             // cout << "finished board\n";
             break;
         }
         if (!is_updated) {
-            // cout << "not updated in last iteration\n";
             break;
         }
-        // cout << "finished iteration\n";
     }
     auto end_solver = Clock::now();
     std::cout << "Solver:"

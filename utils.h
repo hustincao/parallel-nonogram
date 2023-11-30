@@ -4,7 +4,6 @@
 #include <sstream>
 #include <string>
 
-
 // Board values
 #define NOT_SET 9
 #define UNFILLED 0
@@ -17,6 +16,10 @@ class Game {
     unsigned int height;
     unsigned int *len_constraints;
     unsigned int **constraints;
+    unsigned int num_constraints = 0;
+
+    int **row_answers;
+    int **col_answers;
 
     int **board;
     int **solution;
@@ -44,6 +47,8 @@ class Game {
 
             len_constraints = new unsigned int[width + height];
             constraints = new unsigned int *[width + height];
+            col_answers = new int *[width];
+            row_answers = new int *[height];
 
             for (unsigned int i = 0; i < width + height; i++) {
                 std::string input_line;
@@ -52,6 +57,7 @@ class Game {
 
                 int num_groups = 1 + std::count_if(input_line.begin(), input_line.end(),
                                                    [](unsigned char c) { return std::isspace(c); });
+                num_constraints += num_groups;
                 len_constraints[i] = num_groups;
                 constraints[i] = new unsigned int[num_groups];
                 for (unsigned int j = 0; j < num_groups; j++) {
@@ -82,11 +88,18 @@ class Game {
             solution_file.close();
         }
     };
+
+    void generate_col_answers() {
+        for(int i = 0; i < width; i++){
+            
+        }
+    }
+
     // Compares board to solution
-    bool check_solution(){
-        for(int i = 0; i < height; i++){
-            for(int j = 0; j < width; j++){
-                if(board[i][j] != solution[i][j]){
+    bool check_solution() {
+        for (int i = 0; i < height; i++) {
+            for (int j = 0; j < width; j++) {
+                if (board[i][j] != solution[i][j]) {
                     return false;
                 }
             }
@@ -98,7 +111,11 @@ class Game {
         for (int i = 0; i < width + height; i++) {
             delete[] constraints[i];
         }
+        for (int i = 0; i < width; i++) {
+            delete[] col_answers[i];
+        }
         for (int i = 0; i < height; i++) {
+            delete[] row_answers[i];
             delete[] board[i];
             delete[] solution[i];
         }
