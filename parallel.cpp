@@ -1,16 +1,15 @@
+#include <chrono>
 #include <fstream>
 #include <iostream>
+#include <omp.h>
 #include <sstream>
 #include <string>
 #include <vector>
-#include <chrono>
-#include <omp.h>
-
 
 using namespace std;
 typedef std::chrono::high_resolution_clock Clock;
 
-#define THREAD_NUM 4
+#define THREAD_NUM 1
 #define UNKNOWN 4
 #define UNFILLED 0
 #define FILLED 1
@@ -82,7 +81,7 @@ void intersect_all_possible_answers(vector<vector<int>> all_possible_answers, in
     // cout << "\n";
     // print_all_possible_answers(all_possible_answers);
     // cout << "-----------\n";
-   
+
     // Set board
     if (is_column) {
         for (int i = 0; i < length; i++) {
@@ -120,7 +119,7 @@ bool remove_possible_answers(vector<vector<int>> &all_possible_answers, int leng
         }
     } else {
         for (int i = all_possible_answers.size() - 1; i >= 0; i--) {
-            for (int j = 0; j < length; j++) {            
+            for (int j = 0; j < length; j++) {
                 if (board[index][j] != UNKNOWN && board[index][j] != all_possible_answers[i][j]) {
                     all_possible_answers.erase(all_possible_answers.begin() + i);
                     is_updated = true;
@@ -154,152 +153,157 @@ bool is_correct(vector<vector<int>> board, vector<vector<int>> solution) {
 }
 
 int main() {
-    // omp_set_thread_num(THREAD_NUM);
-    omp_set_num_threads(THREAD_NUM);
-    #pragma omp parallel
+// omp_set_num_threads(THREAD_NUM);
+#pragma omp parallel
     {
-        if(omp_get_thread_num() == 0){
+        if (omp_get_thread_num() == 0) {
             cout << "Running with " << omp_get_num_threads() << " threads\n";
         }
     }
+
+    // string parent_folder = "tests/tiny";
+    // string test_folders[10] = {"15120", "34238", "65956", "65964", "65967", "66191", "67579", "67918", "68058", "68124"};
     
-    string parent_folder = "tests/tiny";
-    string test_folder = "65956";
+    string parent_folder = "tests/small";
+    string test_folders [10] = {"67504", "67778", "67957","67974","67985","67988","68011","68021","68088","68126"};
+
+    for (const auto &test_folder : test_folders) {
 #pragma region
-    int WIDTH;
-    int HEIGHT;
-    
+        cout << test_folder << "\n";
+        int WIDTH;
+        int HEIGHT;
 
-    vector<vector<int>> row_constraints;
-    vector<vector<int>> col_constraints;
+        vector<vector<int>> row_constraints;
+        vector<vector<int>> col_constraints;
 
-   
-    ifstream constraint_file(parent_folder + "/" + test_folder + "/constraints");
-    if (constraint_file.is_open()) {
-        std::string input_line;
-        std::getline(constraint_file, input_line);
-        std::stringstream input_stream(input_line);
-
-        input_stream >> WIDTH;
-        input_stream >> HEIGHT;
-
-        for (int i = 0; i < WIDTH; i++) {
-            vector<int> constraints;
+        ifstream constraint_file(parent_folder + "/" + test_folder + "/constraints");
+        if (constraint_file.is_open()) {
+            std::string input_line;
             std::getline(constraint_file, input_line);
             std::stringstream input_stream(input_line);
-            int s = 0;
-            while (input_stream >> s) {
-                constraints.push_back(s);
-            }
-            col_constraints.push_back(constraints);
-        }
 
-        for (int i = 0; i < HEIGHT; i++) {
-            vector<int> constraints;
-            std::getline(constraint_file, input_line);
-            std::stringstream input_stream(input_line);
-            int s = 0;
-            while (input_stream >> s) {
-                constraints.push_back(s);
-            }
-            row_constraints.push_back(constraints);
-        }
-    }
-    constraint_file.close();
-    vector<vector<int>> solution(HEIGHT, vector<int>(WIDTH, UNKNOWN));
+            input_stream >> WIDTH;
+            input_stream >> HEIGHT;
 
-    ifstream solution_file(parent_folder + "/" + test_folder + "/solution");
-    if (solution_file.is_open()) {
-        int i = 0;
-        int j = 0;
-        while (!solution_file.eof()) {
-            char c = solution_file.get();
-            if (c != '0' && c != '1')
-                continue;
-            solution[i][j] = c - '0';
-            j += 1;
-            if (j >= WIDTH) {
-                i += 1;
-                j = 0;
+            for (int i = 0; i < WIDTH; i++) {
+                vector<int> constraints;
+                std::getline(constraint_file, input_line);
+                std::stringstream input_stream(input_line);
+                int s = 0;
+                while (input_stream >> s) {
+                    constraints.push_back(s);
+                }
+                col_constraints.push_back(constraints);
+            }
+
+            for (int i = 0; i < HEIGHT; i++) {
+                vector<int> constraints;
+                std::getline(constraint_file, input_line);
+                std::stringstream input_stream(input_line);
+                int s = 0;
+                while (input_stream >> s) {
+                    constraints.push_back(s);
+                }
+                row_constraints.push_back(constraints);
             }
         }
-        solution_file.close();
-    }
+        constraint_file.close();
+        vector<vector<int>> solution(HEIGHT, vector<int>(WIDTH, UNKNOWN));
 
-    // for (int i = 0; i < row_constraints.size(); i++) {
-    //     for (int j = 0; j < row_constraints[i].size(); j++) {
-    //         cout << row_constraints[i][j] << " ";
-    //     }
-    //     cout << '\n';
-    // }
+        ifstream solution_file(parent_folder + "/" + test_folder + "/solution");
+        if (solution_file.is_open()) {
+            int i = 0;
+            int j = 0;
+            while (!solution_file.eof()) {
+                char c = solution_file.get();
+                if (c != '0' && c != '1')
+                    continue;
+                solution[i][j] = c - '0';
+                j += 1;
+                if (j >= WIDTH) {
+                    i += 1;
+                    j = 0;
+                }
+            }
+            solution_file.close();
+        }
 
-    // for (int i = 0; i < col_constraints.size(); i++) {
-    //     for (int j = 0; j < col_constraints[i].size(); j++) {
-    //         cout << col_constraints[i][j] << " ";
-    //     }
-    //     cout << '\n';
-    // }
+        // for (int i = 0; i < row_constraints.size(); i++) {
+        //     for (int j = 0; j < row_constraints[i].size(); j++) {
+        //         cout << row_constraints[i][j] << " ";
+        //     }
+        //     cout << '\n';
+        // }
 
-    vector<vector<int>> board(HEIGHT, vector<int>(WIDTH, UNKNOWN));
+        // for (int i = 0; i < col_constraints.size(); i++) {
+        //     for (int j = 0; j < col_constraints[i].size(); j++) {
+        //         cout << col_constraints[i][j] << " ";
+        //     }
+        //     cout << '\n';
+        // }
+
+        vector<vector<int>> board(HEIGHT, vector<int>(WIDTH, UNKNOWN));
 #pragma endregion
 
-    vector<vector<vector<int>>> all_possible_row_answers(HEIGHT);
-    vector<vector<vector<int>>> all_possible_col_answers(WIDTH);
+        vector<vector<vector<int>>> all_possible_row_answers(HEIGHT);
+        vector<vector<vector<int>>> all_possible_col_answers(WIDTH);
 
-    auto start_generation = Clock::now();
-    
-    #pragma omp parallel for
-    for (int i = 0; i < HEIGHT; i++) {
-        all_possible_row_answers[i] = generate_all_possible_answers(row_constraints[i], WIDTH);
-        // cout << "row " << i << "\n";
-        // print_all_possible_answers(all_possible_row_answers[i]);
-    }
+        auto start_generation = Clock::now();
 
-    #pragma omp parallel for
-    for (int i = 0; i < WIDTH; i++) {
-        all_possible_col_answers[i] = generate_all_possible_answers(col_constraints[i], HEIGHT);
-        // cout << "col " << i << "\n";
-        // print_all_possible_answers(all_possible_col_answers[i]);
-    }
-    auto end_generation = Clock::now();
-    std::cout << "Generation:"
-      << std::chrono::duration_cast<std::chrono::microseconds>(end_generation - start_generation).count() << " microseconds\n";
-    bool is_updated = false;
-    auto start_solver = Clock::now();
-    while (true) {
-        is_updated = false;
-        #pragma omp parallel for
+#pragma omp parallel for
         for (int i = 0; i < HEIGHT; i++) {
-            intersect_all_possible_answers(all_possible_row_answers[i], WIDTH, board, i, false);
-        }
-        #pragma omp parallel for
-        for (int i = 0; i < WIDTH; i++) {
-            intersect_all_possible_answers(all_possible_col_answers[i], HEIGHT, board, i, true);
-        }
-        #pragma omp parallel for
-        for (int i = 0; i < HEIGHT; i++) {
-            bool update = remove_possible_answers(all_possible_row_answers[i], WIDTH, board, i, false);
-
-            is_updated = is_updated || update;
-        }
-        #pragma omp parallel for
-        for (int i = 0; i < WIDTH; i++) {
-            bool update = remove_possible_answers(all_possible_col_answers[i], HEIGHT, board, i, true);
-      
-            is_updated = is_updated || update;
+            all_possible_row_answers[i] = generate_all_possible_answers(row_constraints[i], WIDTH);
+            // cout << "row " << i << "\n";
+            // print_all_possible_answers(all_possible_row_answers[i]);
         }
 
-        if (is_finished(board)) {
-            // cout << "finished board\n";
-            break;
+#pragma omp parallel for
+        for (int i = 0; i < WIDTH; i++) {
+            all_possible_col_answers[i] = generate_all_possible_answers(col_constraints[i], HEIGHT);
+            // cout << "col " << i << "\n";
+            // print_all_possible_answers(all_possible_col_answers[i]);
         }
-        if (!is_updated) {
-            break;
+        auto end_generation = Clock::now();
+        std::cout << "Generation:"
+                  << std::chrono::duration_cast<std::chrono::microseconds>(end_generation - start_generation).count() << " microseconds\n";
+        bool is_updated = false;
+        auto start_solver = Clock::now();
+        while (true) {
+            is_updated = false;
+#pragma omp parallel for
+            for (int i = 0; i < HEIGHT; i++) {
+                intersect_all_possible_answers(all_possible_row_answers[i], WIDTH, board, i, false);
+            }
+#pragma omp parallel for
+            for (int i = 0; i < WIDTH; i++) {
+                intersect_all_possible_answers(all_possible_col_answers[i], HEIGHT, board, i, true);
+            }
+#pragma omp parallel for
+            for (int i = 0; i < HEIGHT; i++) {
+                bool update = remove_possible_answers(all_possible_row_answers[i], WIDTH, board, i, false);
+
+                is_updated = is_updated || update;
+            }
+#pragma omp parallel for
+            for (int i = 0; i < WIDTH; i++) {
+                bool update = remove_possible_answers(all_possible_col_answers[i], HEIGHT, board, i, true);
+
+                is_updated = is_updated || update;
+            }
+
+            if (is_finished(board)) {
+                // cout << "finished board\n";
+                break;
+            }
+            if (!is_updated) {
+                break;
+            }
         }
+        auto end_solver = Clock::now();
+        std::cout << "Solver:"
+                  << std::chrono::duration_cast<std::chrono::microseconds>(end_solver - start_solver).count() << " microseconds\n";
+        cout << "is correct: " << is_correct(board, solution) << "\n";
     }
-    auto end_solver = Clock::now();
-    std::cout << "Solver:"
-      << std::chrono::duration_cast<std::chrono::microseconds>(end_solver - start_solver).count() << " microseconds\n";
-    cout << "is correct: " << is_correct(board, solution) << "\n";
+
     return 0;
 }
